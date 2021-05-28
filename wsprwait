@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+
+set AUDIODEV=hw:1
+
+DECODER=wsprcan/k9an-wsprd
+TMPOUT='_wsprd.out'
+#export XDG_RUNTIME_DIR="/run/user/1000"
+#fix simple() permission denied
+pax11publish -d
+pax11publish -r
+##
+pactl unload-module module-loopback
+aplay -l
+echo "enabling loopback"
+pactl load-module module-loopback source=alsa_input.usb-Plugable_Plugable_USB_Audio_Device_000000000000-00.analog-stereo
+
+echo "configuring i2c"
+/home/debian/final/i2c/./si5351
+i=0
+j=0
+
+decode () {
+	#paplay /home/debian/final/data/iq-16b.wav&
+	i +=1
+
+	if ((j == 0)); then
+		/home/debian/final/gpio/./RFon
+		echo "RF enabled"
+		date
+		date >> /home/debian/final/RFoutput.log
+		/home/debian/final/wsprcan/./k9an-wsprd >> /home/debian/final/RFoutput.log
+		
+	elif ((j == 1)); then
+		/home/debian/final/gpio/./BPon
+		echo "Bandpass enabled"
+		date
+		date >> /home/debian/final/BPoutput.log
+		/home/debian/final/wsprcan/./k9an-wsprd >> /home/debian/final/BPoutput.log
+		
+	fi
+
+	date
+	/home/debian/final/wsprcan/./k9an-wsprd >> /home/debian/final/wsproutput.log
+
+	if ((i == 5)); then
+		i=0
+		if ((j == 0)); then
+			j=1
+		elif ((j == 1)); then
+			j=0
+		fi
+	fi
+}
+
+while true
+do
+	sec=$(date +'%S')
+	min=$(date +'%M')
+	#date
+	if (("10#$min" % 2 == 0 && "10#$sec" == 0 )); then
+		echo -n "Executing wspr_decode "
+		decode
+	#elif ((10#$sec < 40)); then
+	#	sleep 1
+	fi
+done
