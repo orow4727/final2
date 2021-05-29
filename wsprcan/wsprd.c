@@ -90,8 +90,8 @@ void led(void) {
     gpiod_line_request_output(output_line21, "rf",
             GPIOD_LINE_ACTIVE_STATE_HIGH);
 
-    gpiod_line_set_value(output_line19, 1); //turn off bp
-    gpiod_line_set_value(output_line21, 0); //turn on rf
+    gpiod_line_set_value(output_line19, 0); //turn on rf
+    gpiod_line_set_value(output_line21, 1); //turn off bp
 }
  
 
